@@ -3,6 +3,7 @@ import hashlib
 import sys
 import getopt
 import os
+import time
 
 
 def md5(fname):
@@ -25,7 +26,9 @@ def crawl(basedir, recursive):
             continue
         else:
             filehash = md5(filename)
-            print("{0} {1}".format(filehash, filename))
+            # lastmod = time.ctime(os.path.getmtime(filename))
+            lastmod = os.path.getmtime(filename)
+            print("{0} {1} {2}".format(filehash, lastmod, filename))
 
             
 def main(argv):
@@ -42,7 +45,8 @@ def main(argv):
         elif opt in ("-r", "--recursive"):
             recursive = True
         else:
-            assert False, "unhandled option"
+            print("Wrong argument")
+            sys.exit(2)
 
     print(inputdir)
     crawl(inputdir, recursive)
