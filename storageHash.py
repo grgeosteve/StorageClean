@@ -4,6 +4,7 @@ import sys
 import getopt
 import os
 import time
+import stat
 
 
 def md5(fname):
@@ -14,21 +15,25 @@ def md5(fname):
     return hash_md5.hexdigest()
 
 
+def isGrpReadable(filepath):
+    st = os.stat(filepath)
+    return bool(st.st_mode & stat.S_IRGRP)
+
+
 def crawl(basedir, recursive):
     for filename in os.listdir(basedir):
         filename = basedir+filename
         if os.path.isdir(filename):
-            if recursive:
+            if recursive and isGrpReadable(filename):
                 crawl(filename + "/", recursive)
             else:
                 continue
-        elif os.path.islink(filename):
-            continue
-        else:
+        elif os.path.isfile(filename) and isGrpReadable(filename):
             filehash = md5(filename)
-            # lastmod = time.ctime(os.path.getmtime(filename))
             lastmod = os.path.getmtime(filename)
             print("{0} {1} {2}".format(filehash, lastmod, filename))
+        else:
+            continue
 
             
 def main(argv):
