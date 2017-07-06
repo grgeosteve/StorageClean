@@ -175,10 +175,11 @@ def removeFiles(listfname, removefname, remove_list):
     for item in remove_list:
         remove_dict[item] = 1
 
-    with open(removefname, "r") as f:
-        for line in f:
-            item = line.split("\n")[0]
-            remove_dict[item] = 1
+    if os.path.exists(removefname):
+        with open(removefname, "r") as f:
+            for line in f:
+                item = line.split("\n")[0]
+                remove_dict[item] = 1
     
     with open(removefname, "w") as f:
         for elem in remove_dict.keys():
@@ -258,8 +259,6 @@ if __name__ == '__main__':
 
     dirs = listDirectories(mypath)
 
-    remove_fname = os.path.join(mypath, "removelist.filelist")
-
     timed_dirs = []
     for d in dirs:
         cdate = getDirCreationTime
@@ -273,6 +272,8 @@ if __name__ == '__main__':
     # Compare the files
     for i in range(len(timed_dirs) - 1):
         listfile_i = listfiles[i]
+
+        remove_fname = timed_dirs[i][1] + ".removelist"
 
         for j in range(i + 1, len(timed_dirs)):
             listfile_j = listfiles[j]
@@ -306,8 +307,9 @@ if __name__ == '__main__':
                 if tmpmd5 == -1:
                     continue
                 percent = round(float(k) / len(comparison_lists[0]) * 100)
-                if percent > prev_percent:
-                    print("%6d - (%d / %d)" %(percent, k+1, len(comparison_lists[0])))
+                if percent > prev_percent and percent % 10 == 0:
+                    print("(%d,%d)/%d : %6d - (%d / %d)" %(i+1, j+1, len(timed_dirs), percent,
+                                                           k+1, len(comparison_lists[0])))
                     prev_percent = percent
                 md5list1.append([tmpmd5, comparison_lists[0][k]])
                 hashdict_1[comparison_lists[0][k]] = tmpmd5
@@ -334,8 +336,10 @@ if __name__ == '__main__':
                 if tmpmd5 == -1:
                     continue
                 percent = round(float(k) / len(comparison_lists[1]) * 100)
-                if percent > prev_percent:
-                    print("%6d - (%d / %d)" %(percent, k+1, len(comparison_lists[1])))
+                if percent > prev_percent and percent % 10 == 0:
+                    print("(%d/%d)/%d : %6d - (%d / %d)" %(j+1, i+1, len(timed_dirs), percent,
+                                                           k+1, len(comparison_lists[1])))
+
                     prev_percent = percent
                 md5list2.append([tmpmd5, comparison_lists[1][k]])
                 hashdict_2[comparison_lists[1][k]] = tmpmd5
