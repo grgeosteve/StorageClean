@@ -5,14 +5,7 @@ import os
 import stat
 import hashlib
 import time
-
-def isgroupreadable(path):
-    st = os.stat(path)
-    return bool(st.st_mode & stat.S_IRGRP)
-
-def isuserreadable(path):
-    st = os.stat(path)
-    return bool(st.st_mode & stat.S_IRUSR)
+from multiprocessing import Pool
 
 def iswritable(path):
     return os.access(path, os.W_OK)
@@ -43,7 +36,7 @@ def listFiles(path, recursive=False):
 
     return files
 
-def md5sum(path):
+def computeHash(path):
     if (not isfile(path)) and (not isreadable(path)) :
         return -1
 
@@ -204,6 +197,54 @@ def removeFiles(listfname, removefname, remove_list):
         for elem in file_list:
             f.write("%d,%s\n" %(elem[1], elem[0]))
 
+def compareFiles(filepath1, filepath2):
+    try:
+        BUF_SIZE = 4096 # 4Kbytes
+        with open(filepath1, "rb") as f1, open(filepath2, "rb") as f2:
+            while True:
+                data1 = f1.read(BUF_SIZE)
+                data2 = f2.read(BUF_SIZE)
+                if data1 != data2:
+                    return False
+                if not data1:
+                    return True
+            
+    except IOError:
+        return False
+
+def fileInList(filepath, filelist):
+    for f in filelist:
+        if compareFiles(filepath, f):
+            return True
+
+    return False
+
+def compareMultiFiles(filelist1, filelist2):
+    list_same = []
+    for f in filelist1:
+        if fileInList(f, filelist2):
+            list_same.append(f)
+
+    return list_same
+
+def compareSimilarHashedFiles(hashdict1, hashdict2):
+    list_same = []
+
+    idx = 0
+    prev_percent = 10
+    for k1, v1 in hashdict1.items():
+        percent = (idx + 1) / float(len(hashdict1)) * 100
+
+        if k1 in hashdict2:
+            list_same.extend(compareMultiFiles(v1, hashdict2[k1]))
+            if percent > prev_percent:
+                prev_percent += 10
+                print("Index: %.2f - %d/%d" % (percent, len(v1), len(hashdict2[k1])))
+
+        idx += 1
+
+    return list_same
+
 
 def compareHashes(md5list1, md5list2):
     md5list1.sort(key=lambda f:f[0])
@@ -221,19 +262,19 @@ def compareHashes(md5list1, md5list2):
     list_same_2 = []
     while True:
         if md5list1[idx1][0] == md5list2[idx2][0]:
-            list_same_1.append(md5list1[idx1][1])
-            list_same_2.append(md5list2[idx2][1])
+            list_same_1.append(md5list1[idx1])
+            list_same_2.append(md5list2[idx2])
 
             prev_hash = md5list1[idx1][0]
 
             idx1 += 1
             while idx1 < elems1 and md5list1[idx1][0] == prev_hash:
-                list_same_1.append(md5list1[idx1][1])
+                list_same_1.append(md5list1[idx1])
                 idx1 += 1
 
             idx2 += 1
             while idx2 < elems2 and md5list2[idx2][0] == prev_hash:
-                list_same_2.append(md5list2[idx2][1])
+                list_same_2.append(md5list2[idx2])
                 idx2 += 1
 
             if idx1 >= elems1 or idx2 >= elems2:
@@ -261,8 +302,9 @@ if __name__ == '__main__':
 
     timed_dirs = []
     for d in dirs:
-        cdate = getDirCreationTime
+        cdate = getDirCreationTime(d)
         timed_dirs.append([cdate, d])
+    timed_dirs.sort(key=lambda f:f[0])
 
     listfiles = []
     for cdate, d in timed_dirs:
@@ -281,7 +323,7 @@ if __name__ == '__main__':
             comparison_lists = compareDirs(listfile_i, listfile_j)
             if comparison_lists == []:
                 continue
-            print(len(comparison_lists[0]))
+            print("%d - %d" % (len(comparison_lists[0]), len(comparison_lists[1])))
 
             hashdict_1 = {}
             hashdict_2 = {}
@@ -302,7 +344,7 @@ if __name__ == '__main__':
                 if comparison_lists[0][k] in hashdict_1:
                     tmpmd5 = hashdict_1[comparison_lists[0][k]]
                 else:
-                    tmpmd5 = md5sum(comparison_lists[0][k])
+                    tmpmd5 = computeHash(comparison_lists[0][k])
 
                 if tmpmd5 == -1:
                     continue
@@ -331,7 +373,7 @@ if __name__ == '__main__':
                 if comparison_lists[1][k] in hashdict_2:
                     tmpmd5 = hashdict_2[comparison_lists[1][k]]
                 else:
-                    tmpmd5 = md5sum(comparison_lists[1][k])
+                    tmpmd5 = computeHash(comparison_lists[1][k])
 
                 if tmpmd5 == -1:
                     continue
@@ -348,20 +390,43 @@ if __name__ == '__main__':
             if len(hashdict_2) > 0:
                 print("Writing hashes to file %s" % filename_2)
                 writeHashes(filename_2, hashdict_2)
-
-            list_remove = compareHashes(md5list1, md5list2)
-            if len(list_remove) == 0:
-                continue
             
-            print(len(list_remove[0]))
+
+            print("%d - %d" % (len(md5list1), len(md5list2)))
+
+            list_similar = compareHashes(md5list1, md5list2)
+            if len(list_similar) == 0:
+                continue
+            list_similar_1 = list_similar[0]
+            list_similar_2 = list_similar[1]
+            print("%d - %d" % (len(list_similar_1), len(list_similar_2)))
+
+            # Convert lists to dicts
+            hash_similar_1 = {}
+            for elem in list_similar_1:
+                if elem[0] in hash_similar_1:
+                    hash_similar_1[elem[0]].append(elem[1])
+                else:
+                    hash_similar_1[elem[0]] = [elem[1]]
+
+            hash_similar_2 = {}
+            for elem in list_similar_2:
+                if elem[0] in hash_similar_2:
+                    hash_similar_2[elem[0]].append(elem[1])
+                else:
+                    hash_similar_2[elem[0]] = [elem[1]]
+
+            list_remove = compareSimilarHashedFiles(hash_similar_1, hash_similar_2)
+            
+            print(len(list_remove))
             total_size = 0
-            for elem in list_remove[0]:
+            for elem in list_remove:
                 filesize = os.path.getsize(elem)
                 total_size += filesize
             print(total_size)
 
             # Remove files
-            removeFiles(listfile_i, remove_fname, list_remove[0])
+            removeFiles(listfile_i, remove_fname, list_remove)
         
             
 
