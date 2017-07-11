@@ -7,18 +7,21 @@ import hashlib
 import time
 from multiprocessing import Pool
 
-def iswritable(path):
+def is_writable(path):
     return os.access(path, os.W_OK)
 
-def isreadable(path):
+def is_readable(path):
     return os.access(path, os.R_OK)
 
-def isDir(path):
+def is_dir(path):
     return isdir(path) and (not islink(path))
+
+def is_valid_dir(path):
+    return is_dir(path) and is_readable(path)
 
 def listFiles(path, recursive=False):
     files = []
-    if not isreadable(path):
+    if not is_valid_dir(path):
         return files
 
     for f in listdir(path):
@@ -26,18 +29,17 @@ def listFiles(path, recursive=False):
         if isfile(tmppath):
             filesize = os.path.getsize(tmppath)
             files.append([filesize, tmppath])
-        elif isDir(tmppath) and recursive:
-            if isreadable(tmppath):
-                try:
-                    print(tmppath)
-                except UnicodeEncodeError:
-                    pass
-                files.extend(listFiles(tmppath, recursive))
+        elif is_valid_dir(tmppath) and recursive:
+            try:
+                print(tmppath)
+            except UnicodeEncodeError:
+                pass
+            files.extend(listFiles(tmppath, recursive))
 
     return files
 
 def computeHash(path):
-    if (not isfile(path)) and (not isreadable(path)) :
+    if (not isfile(path)) and (not is_readable(path)) :
         return -1
 
     # BUF_SIZE = 65536 # 64Kb
@@ -337,7 +339,7 @@ if __name__ == '__main__':
             prev_percent = 0
             md5list1 = []
             for k in range(len(comparison_lists[0])):
-                if not iswritable(comparison_lists[0][k]):
+                if not is_writable(comparison_lists[0][k]):
                     continue
 
                 tmpmd5 = ""
@@ -366,7 +368,7 @@ if __name__ == '__main__':
             prev_percent = 0
             md5list2 = []
             for k in range(len(comparison_lists[1])):
-                if not iswritable(comparison_lists[1][k]):
+                if not is_writable(comparison_lists[1][k]):
                     continue
 
                 tmpmd5 = ""
