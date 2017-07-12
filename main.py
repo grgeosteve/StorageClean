@@ -39,7 +39,7 @@ def listFiles(path, recursive=False):
     return files
 
 def computeHash(path):
-    if (not isfile(path)) and (not is_readable(path)) :
+    if (not isfile(path)) or (not is_readable(path)) :
         return -1
 
     # BUF_SIZE = 65536 # 64Kb
