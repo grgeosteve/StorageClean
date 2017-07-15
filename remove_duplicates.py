@@ -19,8 +19,9 @@ if __name__ == '__main__':
         if os.path.isfile(rmfile):
             rmlist_files.append(rmfile)
 
+    idx = 0
     for rmfile in rmlist_files:
-        print(rmfile)
+        print("%d/%d - %s" % (idx+1, len(rmlist_files), rmfile)
         with open(rmfile, 'r') as f:
             for line in f:
                 fname = line.split("\n")[0]
