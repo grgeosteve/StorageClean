@@ -33,3 +33,4 @@ if __name__ == '__main__':
                             os.remove(fname)
                         print("Exiting")
                         exit()
+        idx += 1
