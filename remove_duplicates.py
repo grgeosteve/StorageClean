@@ -21,8 +21,8 @@ if __name__ == '__main__':
 
     idx = 0
     for rmfile in rmlist_files:
-        print("%d/%d - %s" % (idx+1, len(rmlist_files), rmfile)
-        with open(rmfile, 'r') as f:
+        print("%d/%d - %s" % (idx+1, len(rmlist_files), rmfile))
+        with open(rmfile, "r") as f:
             for line in f:
                 fname = line.split("\n")[0]
                 if find_duplicates.is_writable(fname):
