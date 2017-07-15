@@ -396,6 +396,8 @@ if __name__ == '__main__':
 
             print("%d - %d" % (len(md5list1), len(md5list2)))
 
+            if len(md5list1) == 0 or len(md5list2) == 0:
+                continue
             list_similar = compareHashes(md5list1, md5list2)
             if len(list_similar) == 0:
                 continue
