@@ -6,20 +6,23 @@ import sys
 import os
 import stat
 import hashlib
-import time
-from multiprocessing import Pool
+
 
 def is_writable(path):
     return os.access(path, os.W_OK)
 
+
 def is_readable(path):
     return os.access(path, os.R_OK)
+
 
 def is_dir(path):
     return isdir(path) and (not islink(path))
 
+
 def is_valid_dir(path):
     return is_dir(path) and is_readable(path)
+
 
 def listFiles(path, recursive=False):
     files = []
@@ -40,8 +43,9 @@ def listFiles(path, recursive=False):
 
     return files
 
+
 def computeHash(path):
-    if (not isfile(path)) or (not is_readable(path)) :
+    if (not isfile(path)) or (not is_readable(path)):
         return -1
 
     # BUF_SIZE = 65536 # 64Kb
@@ -55,6 +59,7 @@ def computeHash(path):
             md5.update(data)
     return md5.hexdigest()
 
+
 def listDirectories(path):
     dirs = []
     for f in listdir(path):
@@ -64,9 +69,11 @@ def listDirectories(path):
 
     return dirs
 
+
 def getDirCreationTime(path):
     cdate = os.stat(path)[stat.ST_CTIME]
     return cdate
+
 
 def saveFlattenDir(path):
 
@@ -82,6 +89,7 @@ def saveFlattenDir(path):
                 pass
     return filepath
 
+
 def readEntry(f):
     line = f.readline()
     if line == "":
@@ -91,6 +99,7 @@ def readEntry(f):
     filename = line_split[-1].split("\n")[0]
     filesize = int(line_split[0])
     return [filesize, filename]
+
 
 def compareDirs(listfile_1, listfile_2):
     print(listfile_1)
@@ -150,6 +159,7 @@ def compareDirs(listfile_1, listfile_2):
     except IOError:
         return []
 
+
 def readHashes(filename):
     hashdict = {}
     with open(filename, "r") as f:
@@ -159,12 +169,14 @@ def readHashes(filename):
             tmphash = line_split[0]
 
             hashdict[fname] = tmphash
-    return hashdict        
+    return hashdict
+
 
 def writeHashes(filename, hashdict):
     with open(filename, "w") as f:
         for elem in hashdict.items():
-            f.write("%s,%s\n" %(elem[1], elem[0]))
+            f.write("%s,%s\n" % (elem[1], elem[0]))
+
 
 def removeFiles(listfname, removefname, remove_list):
     # append the file for removal
@@ -196,14 +208,15 @@ def removeFiles(listfname, removefname, remove_list):
 
     # write the list of remaining files
     file_list = [[k, v] for k, v in file_dict.items()]
-    file_list.sort(key=lambda f:f[1])
+    file_list.sort(key=lambda f: f[1])
     with open(listfname, "w") as f:
         for elem in file_list:
-            f.write("%d,%s\n" %(elem[1], elem[0]))
+            f.write("%d,%s\n" % (elem[1], elem[0]))
+
 
 def compareFiles(filepath1, filepath2):
     try:
-        BUF_SIZE = 4096 # 4Kbytes
+        BUF_SIZE = 4096  # 4Kbytes
         with open(filepath1, "rb") as f1, open(filepath2, "rb") as f2:
             while True:
                 data1 = f1.read(BUF_SIZE)
@@ -216,12 +229,14 @@ def compareFiles(filepath1, filepath2):
     except IOError:
         return False
 
+
 def fileInList(filepath, filelist):
     for f in filelist:
         if compareFiles(filepath, f):
             return True
 
     return False
+
 
 def compareMultiFiles(filelist1, filelist2):
     list_same = []
@@ -230,6 +245,7 @@ def compareMultiFiles(filelist1, filelist2):
             list_same.append(f)
 
     return list_same
+
 
 def compareSimilarHashedFiles(hashdict1, hashdict2):
     list_same = []
@@ -243,7 +259,9 @@ def compareSimilarHashedFiles(hashdict1, hashdict2):
             list_same.extend(compareMultiFiles(v1, hashdict2[k1]))
             if percent > prev_percent:
                 prev_percent += 10
-                print("Index: %.2f - %d/%d" % (percent, len(v1), len(hashdict2[k1])))
+                print("Index: %.2f - %d/%d" % (percent,
+                                               len(v1),
+                                               len(hashdict2[k1])))
 
         idx += 1
 
@@ -251,8 +269,8 @@ def compareSimilarHashedFiles(hashdict1, hashdict2):
 
 
 def compareHashes(md5list1, md5list2):
-    md5list1.sort(key=lambda f:f[0])
-    md5list2.sort(key=lambda f:f[0])
+    md5list1.sort(key=lambda f: f[0])
+    md5list2.sort(key=lambda f: f[0])
 
     elems1 = len(md5list1)
     elems2 = len(md5list2)
@@ -308,7 +326,7 @@ if __name__ == '__main__':
     for d in dirs:
         cdate = getDirCreationTime(d)
         timed_dirs.append([cdate, d])
-    timed_dirs.sort(key=lambda f:f[0])
+    timed_dirs.sort(key=lambda f: f[0])
 
     listfiles = []
     for cdate, d in timed_dirs:
@@ -327,7 +345,8 @@ if __name__ == '__main__':
             comparison_lists = compareDirs(listfile_i, listfile_j)
             if comparison_lists == []:
                 continue
-            print("%d - %d" % (len(comparison_lists[0]), len(comparison_lists[1])))
+            print("%d - %d" % (len(comparison_lists[0]),
+                               len(comparison_lists[1])))
 
             hashdict_1 = {}
             hashdict_2 = {}
@@ -354,8 +373,9 @@ if __name__ == '__main__':
                     continue
                 percent = round(float(k) / len(comparison_lists[0]) * 100)
                 if percent > prev_percent and percent % 10 == 0:
-                    print("(%d,%d)/%d : %6d - (%d / %d)" %(i+1, j+1, len(timed_dirs), percent,
-                                                           k+1, len(comparison_lists[0])))
+                    msg = "(%d,%d)/%d : %6d - (%d / %d)"
+                    print(msg % (i+1, j+1, len(timed_dirs), percent,
+                                 k+1, len(comparison_lists[0])))
                     prev_percent = percent
                 md5list1.append([tmpmd5, comparison_lists[0][k]])
                 hashdict_1[comparison_lists[0][k]] = tmpmd5
@@ -383,8 +403,9 @@ if __name__ == '__main__':
                     continue
                 percent = round(float(k) / len(comparison_lists[1]) * 100)
                 if percent > prev_percent and percent % 10 == 0:
-                    print("(%d/%d)/%d : %6d - (%d / %d)" %(j+1, i+1, len(timed_dirs), percent,
-                                                           k+1, len(comparison_lists[1])))
+                    msg = "(%d/%d)/%d : %6d - (%d / %d)"
+                    print(msg % (j+1, i+1, len(timed_dirs), percent,
+                                 k+1, len(comparison_lists[1])))
 
                     prev_percent = percent
                 md5list2.append([tmpmd5, comparison_lists[1][k]])
@@ -394,7 +415,6 @@ if __name__ == '__main__':
             if len(hashdict_2) > 0:
                 print("Writing hashes to file %s" % filename_2)
                 writeHashes(filename_2, hashdict_2)
-            
 
             print("%d - %d" % (len(md5list1), len(md5list2)))
 
@@ -422,7 +442,8 @@ if __name__ == '__main__':
                 else:
                     hash_similar_2[elem[0]] = [elem[1]]
 
-            list_remove = compareSimilarHashedFiles(hash_similar_1, hash_similar_2)
+            list_remove = compareSimilarHashedFiles(hash_similar_1,
+                                                    hash_similar_2)
             
             print(len(list_remove))
             total_size = 0
@@ -433,9 +454,3 @@ if __name__ == '__main__':
 
             # Remove files
             removeFiles(listfile_i, remove_fname, list_remove)
-        
-            
-
-    # Remove temporary files
-    # for f in listfiles:
-    #     os.remove(f)
