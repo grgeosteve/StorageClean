@@ -2,7 +2,7 @@
 
 import sys
 from os import path
-import main
+import find_duplicates
 
 
 def print_hr(sz):
@@ -23,7 +23,7 @@ def print_hr(sz):
 if __name__ == '__main__':
     mypath = sys.argv[1]
 
-    files = main.listFiles(mypath)
+    files = find_duplicates.listFiles(mypath)
     rmfiles = [f[1] for f in files if f[1].endswith(".removelist")]
 
     total_size = 0
