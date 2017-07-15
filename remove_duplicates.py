@@ -10,14 +10,14 @@ if __name__ == '__main__':
 
     dirs = find_duplicates.listDirectories(mypath)
     if dirs == []:
-        return
+        print("Exiting")
+        exit()
 
     rmlist_files = []
     for d in dirs:
         rmfile = d + ".removelist"
-        if ospath.isfile(rmfile):
+        if os.path.isfile(rmfile):
             rmlist_files.append(rmfile)
-
 
     for rmfile in rmlist_files:
         print(rmfile)
@@ -31,5 +31,4 @@ if __name__ == '__main__':
                         if os.path.isfile(fname):
                             os.remove(fname)
                         print("Exiting")
-                        return
-            
+                        exit()
