@@ -324,14 +324,14 @@ if __name__ == '__main__':
 
     timed_dirs = []
     for d in dirs:
-        cdate = getDirCreationTime(d)
+        cdate = os.path.getmtime(d)  # Get last modification of the directory
         timed_dirs.append([cdate, d])
     timed_dirs.sort(key=lambda f: f[0])
 
     listfiles = []
     for cdate, d in timed_dirs:
-        # listfiles.append(saveFlattenDir(d))
-        listfiles.append(d + ".filelist")
+        listfiles.append(saveFlattenDir(d))
+        # listfiles.append(d + ".filelist")
 
     # Compare the files
     for i in range(len(timed_dirs) - 1):
@@ -381,8 +381,6 @@ if __name__ == '__main__':
                 hashdict_1[comparison_lists[0][k]] = tmpmd5
 
             # Save the computed hashes
-            # if len(md5list1) > 0:
-            #     writeHashes(filename_1, md5list1)
             if len(hashdict_1) > 0:
                 print("Writing hashes to file %s" % filename_1)
                 writeHashes(filename_1, hashdict_1)
